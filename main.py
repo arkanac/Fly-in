@@ -1,5 +1,9 @@
+from parser import Parsing
+
+
 def main():
-    print("Hello from fly-in!")
+    parse = Parsing()
+    print(parse.zone_stats)
 
 
 if __name__ == "__main__":
