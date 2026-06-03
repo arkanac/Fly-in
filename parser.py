@@ -4,9 +4,9 @@ from typing import Optional, Any
 
 
 class ZoneType(str, Enum):
-    NORMAL = "normal",
-    BLOCKED = "blocked",
-    RESTRICTED = "restricted",
+    NORMAL = "normal"
+    BLOCKED = "blocked"
+    RESTRICTED = "restricted"
     PRIORITY = "priority"
 
 
@@ -17,6 +17,8 @@ class Zone(BaseModel):
     zone: ZoneType = Field(default=ZoneType.NORMAL)
     max_drones: int = Field(gt=0, default=1)
     color: Optional[str] = None
+    is_start: bool = False
+    is_end: bool = False
 
 
 class Connection(BaseModel):
@@ -25,36 +27,105 @@ class Connection(BaseModel):
     max_link_capacity: int = Field(gt=0, default=1)
 
 
-class Graph(BaseModel):
-    nb_drones: int = Field(ge=0)
+class Graph(BaseModel, validate_assignment=True):
+    nb_drones: int = Field(ge=0, default=0)
     zones: dict[str, Zone] = {}
     connection: list[Connection] = []
 
 
 class Parsing:
     def __init__(self, path: str) -> None:
-        self.metadata: Any = metadata
-        self.zone_stats: Any = zone_stats
-        self.connection_stat: str = connection_stats
+        self.graph = Graph()
+        self.nb_drones: int = 0
         path = "/home/rem/Fly-in/maps/easy/01_linear_path.txt"
         try:
             with open(path, "r", encoding="utf-8") as f:
                 lines = f.readlines()
                 
             for line in lines:
-
                 if not line.strip() or line.startswith("#"):
                     continue
-                elif line.startswith("hub:", "start_hub:", "end_hub"):
-                    part = line.split("[")
-                    self.zone_stats = part[0]
-                    self.metadata = part[1]
+                elif line.startswith("hub:"):
+                    zone = self.parse_zone(line, False, False)
+                    self.graph.zones[zone.name] = zone
+                elif line.startswith("start_hub:"):
+                    zone = self.parse_zone(line, True, False)
+                    self.graph.zones[zone.name] = zone
+                elif line.startswith("end_hub:"):
+                    zone = self.parse_zone(line, False, True)
+                    self.graph.zones[zone.name] = zone
                 elif line.startswith("connection:"):
-                    part = line.split("[")
-                    self.connection_stats = part[0]
-                    self.metadata = part[1]
+                    connection = self.parse_connection(line)
+                    self.graph.connection.append(connection)
+                elif line.startswith("nb_drones:"):
+                    self.parse_nb_drone(line)
         except ValidationError as e:
             raise Exception(e)
+
+    def parse_nb_drone(self, line: str) -> None:
+        try:
+            self.graph.nb_drones = int(line.split(":")[1].strip())
+        except (ValidationError, ValueError) as e:
+            raise (e)
+
+    def parse_zone(self, line: str,  is_start: bool = False,
+                   is_end: bool = False)-> Zone:
+        zone_data: dict[str, Any] = {}
+        try:
+            if is_start:
+                zone_data["is_start"]= True
+            if is_end:
+                zone_data["is_end"] = True
+            data = line.split(":")[1]
+            part = data.split("[")
+            zone_stats = part[0]
+            stats = zone_stats.split()
+            zone_data["name"] = stats[0]
+            if "-" in zone_data["name"]:
+                raise ValueError("Error: Zone name cannot contain dashes")
+            zone_data["x"] = int(stats[1])
+            zone_data["y"] = int(stats[2])
+            if len(part) > 1:
+                metadata = part[1].strip("]")
+                metadata_parts = metadata.split()
+                for pair in metadata_parts:
+                    k, v = pair.split("=")
+                    zone_data[k] = v
+            zone = Zone.model_validate(zone_data)
+            return zone
+        except ValidationError as e:
+            raise e
+
+    def parse_connection(self, line: str):
+        connection_data: dict[str, Any] = {}
+        try:
+            data = line.split(":")[1]
+            part = data.split("[")
+            zone_name = part[0]
+            name = zone_name.split("-")
+            name_1 = name[0].strip()
+            name_2 = name[1].strip()
+            if name_1 not in self.graph.zones:
+                raise ValueError(f"Hub {name_1} not found")
+            if name_2 not in self.graph.zones:
+                raise ValueError(f"Hub {name_2} not found")
+            zone_1 = self.graph.zones[name_1]
+            zone_2 = self.graph.zones[name_2]
+            connection_data["name_1"] = zone_1
+            connection_data["name_2"] = zone_2
+            if len(part) > 1:
+                metadata = part[1].strip("]")
+                for pair in metadata:
+                    k, v = pair.split("=")
+                    if k != "max_link_capacity":
+                        raise ValueError(f"Unknown metadata key: {k}")
+                    connection_data[k] = v
+            connection = Connection.model_validate(connection_data)
+            return connection
+        except ValidationError as e:
+            raise e
+            
+
 
 
 
