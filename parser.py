@@ -27,6 +27,7 @@ class Zone(BaseModel):
             raise ValueError("Color must be a single-word string")
         return v
 
+
 class Connection(BaseModel):
     name_1: Zone
     name_2: Zone
@@ -73,11 +74,11 @@ class Parsing:
                              f" -> {line.split(":")[1].strip()}")
 
     def parse_zone(self, line: str,  is_start: bool = False,
-                   is_end: bool = False)-> Zone:
+                   is_end: bool = False) -> Zone:
         zone_data: dict[str, Any] = {}
         try:
             if is_start:
-                zone_data["is_start"]= True
+                zone_data["is_start"] = True
             if is_end:
                 zone_data["is_end"] = True
             data = line.split(":")[1]
@@ -135,7 +136,8 @@ class Parsing:
                     if k != "max_link_capacity":
                         raise ValueError(f"Unknown metadata key: {k}")
                     connection_data[k] = v.strip("]")
-            if (name_1, name_2) in self.seen_connections or (name_2, name_1) in self.seen_connections:
+            if ((name_1, name_2) in self.seen_connections
+                    or (name_2, name_1) in self.seen_connections):
                 raise ValueError(f"Duplicate connection: '{name_1}-{name_2}'")
             self.seen_connections.add((name_1, name_2))
             connection = Connection.model_validate(connection_data)
@@ -155,4 +157,3 @@ class Parsing:
             raise ValueError(f"Expected 1 end zone, found {len(ends)}")
         if self.graph.nb_drones <= 0:
             raise ValueError("1 or more drone expected")
-        
