@@ -39,6 +39,24 @@ class Graph(BaseModel, validate_assignment=True):
     zones: dict[str, Zone] = {}
     connection: list[Connection] = []
 
+    def get_neighbors(self, zone_name: str) -> list[tuple[Connection, Zone]]:
+        neighbor_list: list[tuple[Connection, Zone]] = []
+        for link in self.connection:
+            if (link.name_1.name == zone_name and link.name_2.zone
+                    != ZoneType.BLOCKED):
+                neighbor_list.append((link, link.name_2))
+            elif (link.name_2.name == zone_name and link.name_1.zone
+                    != ZoneType.BLOCKED):
+                neighbor_list.append((link, link.name_1))
+        return neighbor_list
+
+    def move_cost(self, zone: Zone) -> int:
+        match zone.zone:
+            case ZoneType.RESTRICTED:
+                return 2
+            case _:
+                return 1
+
 
 class Parsing:
     def __init__(self, path: str) -> None:
