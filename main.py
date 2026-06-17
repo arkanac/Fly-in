@@ -1,11 +1,14 @@
-from parser import Parsing
+from parser import Parsing, Graph
 from pydantic import ValidationError
+from graphic import Display
 
 
 def main():
     try:
         parse = Parsing("/home/rem/Fly-in/maps/medium/03_priority_puzzle.txt")
-        print(parse.graph)
+        d = Display(Graph)
+        d.show_smg()
+
     except ValidationError as e:
         for error in e.errors():
             print(f"ERROR: {error['loc'][0]} - {error['msg']}")
