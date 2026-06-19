@@ -1,13 +1,21 @@
-from parser import Parsing, Graph
+from src.parser import Parsing, Graph, Zone
 from pydantic import ValidationError
-from graphic import Display
+from src.graphic import Display
+from src.simulation import Pathfinder
 
 
 def main():
     try:
-        parse = Parsing("/home/rem/Fly-in/maps/medium/03_priority_puzzle.txt")
-        d = Display(Graph)
-        d.show_smg()
+        parse = Parsing("/home/rem/Fly-in/maps/hard/01_maze_nightmare.txt")
+        graph = parse.graph
+        pf = Pathfinder(graph)
+        path_list = pf.routing()
+        turns = max(path_list, key=lambda p: (p[-1][0]))
+        total_turns = turns[-1][0]
+        d = Display(graph)
+        d.create_network()
+        for t in range(total_turns + 1):
+            d.show_drones()
 
     except ValidationError as e:
         for error in e.errors():

@@ -1,4 +1,4 @@
-from parser import Zone, Graph
+from src.parser import Zone, Graph
 import heapq
 
 
