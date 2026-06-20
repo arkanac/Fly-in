@@ -1,4 +1,4 @@
-from src.parser import Parsing, Graph, Zone
+from src.parser import Parsing
 from pydantic import ValidationError
 from src.graphic import Display
 from src.simulation import Pathfinder
@@ -6,16 +6,14 @@ from src.simulation import Pathfinder
 
 def main():
     try:
-        parse = Parsing("/home/rem/Fly-in/maps/hard/01_maze_nightmare.txt")
+        parse = Parsing("/home/rem/Fly-in/maps/easy/02_simple_fork.txt")
         graph = parse.graph
         pf = Pathfinder(graph)
         path_list = pf.routing()
         turns = max(path_list, key=lambda p: (p[-1][0]))
         total_turns = turns[-1][0]
         d = Display(graph)
-        d.create_network()
-        for t in range(total_turns + 1):
-            d.show_drones()
+        d.create_network(path_list, total_turns)
 
     except ValidationError as e:
         for error in e.errors():

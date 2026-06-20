@@ -20,6 +20,11 @@ class Pathfinder:
         self.zone_table: dict[tuple[int, str], int] = {}
         self.link_table: dict[tuple[str, str, int], int] = {}
 
+    def link_key(self, zone1: str, zone2: str) -> tuple[str, str]:
+        if zone1 < zone2:
+            return (zone1, zone2)
+        return (zone2, zone1)
+
     def find_path(self) -> list[tuple[int, str]] | None:
         start_hub = next(z.name for z in self.graph.zones.values()
                          if z.is_start)
@@ -46,21 +51,27 @@ class Pathfinder:
             for connection, neighbor in connection_list:
                 new_turn = turn + self.graph.move_cost(neighbor)
                 zone_count = self.zone_table.get((new_turn, neighbor.name), 0)
-                if zone_count >= neighbor.max_drones:
-                    continue
-                link_count = self.link_table.get((connection.name_1.name,
-                                                  connection.name_2.name,
-                                                  turn + 1), 0)
+                if not neighbor.is_end and not neighbor.is_start:
+                    if zone_count >= neighbor.max_drones:
+                        continue
+                link_count = self.link_table.get((*self.link_key(zone_name,
+                                                  neighbor.name), turn + 1), 0)
                 if link_count >= connection.max_link_capacity:
                     continue
                 next_one = (new_turn, neighbor.name)
                 heapq.heappush(queue, next_one)
                 prev[(new_turn, neighbor.name)] = (turn, zone_name)
-            wait_count = self.zone_table.get((turn + 1, zone_name), 0)
-            if wait_count < self.graph.zones[zone_name].max_drones:
+            if (self.graph.zones[zone_name].is_start or
+                    self.graph.zones[zone_name].is_end):
                 heapq.heappush(queue, (turn + 1, zone_name))
                 if (turn + 1, zone_name) not in prev:
                     prev[(turn + 1, zone_name)] = (turn, zone_name)
+            else:
+                wait_count = self.zone_table.get((turn + 1, zone_name), 0)
+                if wait_count < self.graph.zones[zone_name].max_drones:
+                    heapq.heappush(queue, (turn + 1, zone_name))
+                    if (turn + 1, zone_name) not in prev:
+                        prev[(turn + 1, zone_name)] = (turn, zone_name)
         return None
 
     def reserve_path(self, path: list[tuple[int, str]] | None) -> None:
@@ -70,7 +81,7 @@ class Pathfinder:
             self.zone_table[state] = self.zone_table.get(state, 0) + 1
         for (turn1, zone1), (turn2, zone2) in zip(path, path[1:]):
             if zone1 != zone2:
-                link = (zone1, zone2, turn1)
+                link = (*self.link_key(zone1, zone2), turn1 + 1)
                 self.link_table[link] = self.link_table.get(link, 0) + 1
 
     def routing(self) -> list[list[tuple[int, str]]]:
