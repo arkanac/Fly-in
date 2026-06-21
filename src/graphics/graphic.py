@@ -79,7 +79,6 @@ class Display:
             pygame.time.wait(1000)
             if self.current_turn <= total_turns:
                 self.current_turn += 1
-                print(self.current_turn)
         pygame.quit()
 
     def show_drones(self, path_list: list[list[tuple[int, str]]],
