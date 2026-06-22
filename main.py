@@ -1,56 +1,65 @@
 import argparse
 import sys
 from pydantic import ValidationError
-from src.graphics.graphic import Display
-from src.parser import Parsing, Graph, ZoneType
-from src.simulation import Pathfinder
+from src import Parsing, Graph, Pathfinder, Display, ZoneType
 
-DEFAULT_MAP = "maps/medium/02_circular_loop.txt"
+DEFAULT_MAP: str = "maps/challenger/01_the_impossible_dream.txt"
 
 
 def parse_arguments() -> argparse.Namespace:
+    """Parse command line arguments for the drone simulation network."""
     parser = argparse.ArgumentParser()
     parser.add_argument("map_path", nargs="?", default=DEFAULT_MAP)
+
     return parser.parse_args()
 
 
-def print_drone_movements(path_list: list, total_turns: int, graph: Graph) -> None:
+def print_drone_movements(path_list: list[list[tuple[int, str]]],
+                          total_turns: int, graph: Graph,) -> None:
+    """Print the synchronized step-by-step drone movements in the console."""
     for turn in range(1, total_turns + 1):
-        movements = []
+        movements: list[str] = []
         for d_idx, path in enumerate(path_list, start=1):
-            previous = "start"
-            for (t, zone_name) in path:
+            previous: str = "start"
+            for t, zone_name in path:
                 if t == turn:
                     movements.append(f"D{d_idx}-{zone_name}")
-                elif t == turn + 1 and graph.zones[zone_name].zone == ZoneType.RESTRICTED:
+                elif (
+                    t == turn + 1
+                    and graph.zones[zone_name].zone == ZoneType.RESTRICTED
+                ):
                     neighbor_list = graph.get_neighbors(zone_name)
                     for connection, neighbor in neighbor_list:
                         if neighbor.name == previous:
-                            movements.append(f"D{d_idx}- Moving from "
-                                             f"{previous} to {neighbor.name}")
+                            movements.append(
+                                f"D{d_idx}-{previous}-{zone_name}"
+                            )
                 previous = zone_name
         if movements:
             print(" ".join(movements))
 
 
 def run_simulation(map_path: str) -> None:
+    """
+    Execute the pathfinding routing and run the visual network simulation."""
     parse = Parsing(map_path)
-    graph = parse.graph
+    graph: Graph = parse.graph
     pathfinder = Pathfinder(parse.graph)
-    path_list = pathfinder.routing()
+    path_list: list[list[tuple[int, str]]] = pathfinder.routing()
 
-    longest_path = max(path_list, key=lambda path: path[-1][0])
-    total_turns = longest_path[-1][0]
+    longest_path: list[tuple[int, str]] = max(
+        path_list, key=lambda path: path[-1][0]
+    )
+    total_turns: int = longest_path[-1][0]
     print_drone_movements(path_list, total_turns, graph)
 
     display = Display(parse.graph)
     display.create_network(path_list, total_turns)
 
 
-
-
 def main() -> None:
-    args = parse_arguments()
+    """Entry point of the program handling configuration and validations."""
+    args: argparse.Namespace = parse_arguments()
     try:
         run_simulation(args.map_path)
     except ValidationError as e:
