@@ -86,14 +86,9 @@ class RestrictedRenderer(ZoneRenderer):
             color: Fill color.
             scale: Current zoom scale factor.
         """
-        pygame.draw.rect(
-            screen, "black",
-            (x - r_out, y - r_out, r_out * 2, r_out * 2), 0,
-        )
-        pygame.draw.rect(
-            screen, color,
-            (x - r, y - r, r * 2, r * 2), 0,
-        )
+        pygame.draw.rect(screen, "black", (x - r_out, y - r_out, r_out * 2,
+                                           r_out * 2), 0)
+        pygame.draw.rect(screen, color, (x - r, y - r, r * 2, r * 2), 0)
 
 
 class BlockedRenderer(ZoneRenderer):
@@ -114,12 +109,8 @@ class BlockedRenderer(ZoneRenderer):
         """
         ro = int(50 * scale)
         ri = int(42 * scale)
-        pts_out = [
-            (x, y - ro), (x + ro, y), (x, y + ro), (x - ro, y),
-        ]
-        pts_in = [
-            (x, y - ri), (x + ri, y), (x, y + ri), (x - ri, y),
-        ]
+        pts_out = [(x, y - ro), (x + ro, y), (x, y + ro), (x - ro, y)]
+        pts_in = [(x, y - ri), (x + ri, y), (x, y + ri), (x - ri, y)]
         pygame.draw.polygon(screen, "black", pts_out, 0)
         pygame.draw.polygon(screen, color, pts_in, 0)
 
@@ -181,8 +172,8 @@ class NormalRenderer(ZoneRenderer):
             color: Fill color.
             scale: Current zoom scale factor.
         """
-        pygame.draw.circle(screen, "black", [x, y], r_out, 0)
-        pygame.draw.circle(screen, color, [x, y], r, 0)
+        pygame.draw.circle(screen, "black", (x, y), r_out, 0)
+        pygame.draw.circle(screen, color, (x, y), r, 0)
 
 
 class Display:
@@ -196,7 +187,6 @@ class Display:
         """
         self.graph = graph
         self.running = True
-        self.middle: list[int] = []
         self.current_turn = 0
         self.zoom_scale = 1.0
         self.offset_x = 0
@@ -228,8 +218,7 @@ class Display:
         middle_y = (min_y + max_y) / 2
         sz = self.screen.get_size()
         x, y = sz[0] - (sz[0] // 10), sz[1] - (sz[1] // 10)
-        factor = int(
-            min(x // x_amp, y // y_amp) * self.spacing_multiplier)
+        factor = int(min(x // x_amp, y // y_amp) * self.spacing_multiplier)
         return ScreenTransform(
             factor, (middle_x, middle_y), (sz[0] // 2, sz[1] // 2),)
 
@@ -245,20 +234,16 @@ class Display:
         Returns:
             A (x, y) pixel coordinate tuple.
         """
-        base_x = (
-            screen.screen_middle[0]
-            + (zone.x - screen.middle[0]) * screen.factor)
-        base_y = (
-            screen.screen_middle[1]
-            + (zone.y - screen.middle[1]) * screen.factor)
-        pos_x = int(
-            screen.screen_middle[0]
-            + (base_x - screen.screen_middle[0]) * self.zoom_scale
-            + self.offset_x)
-        pos_y = int(
-            screen.screen_middle[1]
-            + (base_y - screen.screen_middle[1]) * self.zoom_scale
-            + self.offset_y)
+        base_x = (screen.screen_middle[0] +
+                  (zone.x - screen.middle[0]) * screen.factor)
+        base_y = (screen.screen_middle[1] +
+                  (zone.y - screen.middle[1]) * screen.factor)
+        pos_x = int(screen.screen_middle[0] +
+                    (base_x - screen.screen_middle[0]) * self.zoom_scale +
+                    self.offset_x)
+        pos_y = int(screen.screen_middle[1] +
+                    (base_y - screen.screen_middle[1]) * self.zoom_scale +
+                    self.offset_y)
         return (pos_x, pos_y)
 
     def _handle_events(self) -> None:

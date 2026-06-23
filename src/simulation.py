@@ -33,16 +33,13 @@ class Pathfinder:
 
     def find_path(self) -> list[tuple[int, str]] | None:
         """Find the optimal space-time path for a single drone."""
-        start_hub: str = next(
-            z.name for z in self.graph.zones.values() if z.is_start
-        )
-        end_hub: str = next(
-            z.name for z in self.graph.zones.values() if z.is_end
-        )
+        start_hub: str = next(z.name for z in self.graph.zones.values()
+                              if z.is_start)
+        end_hub: str = next(z.name for z in self.graph.zones.values()
+                            if z.is_end)
         queue: list[tuple[float, int, str]] = [(0.0, 0, start_hub)]
-        prev: dict[tuple[int, str], tuple[int, str] | None] = {
-            (0, start_hub): None
-        }
+        prev: dict[tuple[int, str], tuple[int, str] |
+                   None] = {(0, start_hub): None}
         visited: set[tuple[int, str]] = set()
 
         while queue:
@@ -63,43 +60,34 @@ class Pathfinder:
                 move_cost: int = self.graph.move_cost(neighbor)
                 new_turn: int = turn + move_cost
                 zone_count: int = self.zone_table.get(
-                    (new_turn, neighbor.name), 0
-                )
+                    (new_turn, neighbor.name), 0)
                 if not neighbor.is_end and not neighbor.is_start:
                     if zone_count >= neighbor.max_drones:
                         continue
                 k: tuple[str, str] = self.link_key(zone_name, neighbor.name)
-                link_count: int = self.link_table.get((*k, new_turn), 0)
+                link_count: int = self.link_table.get((k[0], k[1],
+                                                       new_turn), 0)
                 if link_count >= connection.max_link_capacity:
                     continue
-                penalty: float = (
-                    0.0 if neighbor.zone == ZoneType.PRIORITY else 0.001
-                )
+                penalty: float = (0.0 if neighbor.zone ==
+                                  ZoneType.PRIORITY else 0.001)
                 next_one: tuple[float, int, str] = (
                     accumulated_cost + float(move_cost) + penalty,
-                    new_turn,
-                    neighbor.name,
-                )
+                    new_turn, neighbor.name)
                 heapq.heappush(queue, next_one)
-                prev[(new_turn, neighbor.name)] = (turn, zone_name)
-            if (
-                self.graph.zones[zone_name].is_start
-                or self.graph.zones[zone_name].is_end
-            ):
-                heapq.heappush(
-                    queue, (accumulated_cost + 1.0, turn + 1, zone_name)
-                )
+                if (new_turn, neighbor.name) not in prev:
+                    prev[(new_turn, neighbor.name)] = (turn, zone_name)
+            if (self.graph.zones[zone_name].is_start or
+                    self.graph.zones[zone_name].is_end):
+                heapq.heappush(queue, (accumulated_cost + 1.0, turn +
+                                       1, zone_name))
                 if (turn + 1, zone_name) not in prev:
                     prev[(turn + 1, zone_name)] = (turn, zone_name)
             else:
-                wait_count: int = self.zone_table.get(
-                    (turn + 1, zone_name), 0
-                )
+                wait_count: int = self.zone_table.get((turn + 1, zone_name), 0)
                 if wait_count < self.graph.zones[zone_name].max_drones:
-                    heapq.heappush(
-                        queue,
-                        (accumulated_cost + 1.001, turn + 1, zone_name),
-                    )
+                    heapq.heappush(queue, (accumulated_cost + 1.001,
+                                           turn + 1, zone_name))
                     if (turn + 1, zone_name) not in prev:
                         prev[(turn + 1, zone_name)] = (turn, zone_name)
         return None
