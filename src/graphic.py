@@ -302,6 +302,11 @@ class Display:
                     if turn == self.current_turn:
                         current_occupancy[zone_name] = (
                             current_occupancy.get(zone_name, 0) + 1)
+            for path in path_list:
+                if path[-1][0] < self.current_turn:
+                    end_name = path[-1][1]
+                    current_occupancy[end_name] = (
+                        current_occupancy.get(end_name, 0) + 1)
 
             ticks = pygame.time.get_ticks()
             for zone in self.graph.zones.values():
@@ -313,9 +318,10 @@ class Display:
                     self.screen, x, y, r, r_out, color, self.zoom_scale)
                 curr = current_occupancy.get(zone.name, 0)
                 mx = zone.max_drones
-                lbl = f"{curr}/{mx}" if not zone.is_start else f"{curr}/∞"
-
-                txt_color = (255, 0, 0) if curr >= mx else (0, 0, 0)
+                lbl = (f"{curr}/{self.graph.nb_drones}" if zone.is_start
+                       or zone.is_end else f"{curr}/{mx}")
+                txt_color = ((255, 0, 0) if curr >= mx and
+                             not (zone.is_end or zone.is_start) else (0, 0, 0))
                 count_surf = small_font.render(lbl, True, txt_color)
 
                 txt_x = x - (count_surf.get_width() // 2)
