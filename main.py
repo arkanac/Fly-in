@@ -22,7 +22,8 @@ def print_drone_movements(path_list: list[list[tuple[int, str]]],
             previous: str = "start"
             for t, zone_name in path:
                 if t == turn:
-                    movements.append(f"D{d_idx}-{zone_name}")
+                    if zone_name != previous:
+                        movements.append(f"D{d_idx}-{zone_name}")
                 elif (t == turn + 1 and graph.zones[zone_name].zone ==
                       ZoneType.RESTRICTED):
                     neighbor_list = graph.get_neighbors(zone_name)
