@@ -12,7 +12,7 @@ console output and as an animated `pygame` visualization.
 
 | Stage | Responsibility |
 |---|---|
-| **Parsing** | Reads the map file, validates syntax and constraints (zone types, capacities, duplicate connections, dashes in names, etc.) and builds an in-memory graph using `pydantic` models. |
+| **Parsing** | Reads the map file, validates syntax and constraints (zone types, capacities, duplicate connections, dashes in names, etc.) and builds an in-memory graph using `pydantic` models. It also check if there is a valid path to end_hub |
 | **Routing** | Computes, for every drone, a path from start to end that respects zone occupancy, link capacity, and movement costs, while avoiding conflicts with previously assigned paths. |
 | **Display** | Prints the turn-by-turn movements in the required format, then renders the network and animates the drones inside a `pygame` window. |
 

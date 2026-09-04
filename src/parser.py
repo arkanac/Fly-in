@@ -98,6 +98,9 @@ class Parsing:
                     self.graph.connection.append(connection)
                 elif line.startswith("nb_drones:"):
                     self.parse_nb_drone(line)
+                else:
+                    err_name = line.split(":")
+                    raise ValueError(f"Wrong zone name: {err_name[0]}")
             self.validate_graph()
         except ValidationError:
             raise
@@ -191,6 +194,21 @@ class Parsing:
         except ValidationError as e:
             raise e
 
+    def is_reachable(self) -> bool:
+        start = next(z.name for z in self.graph.zones.values() if z.is_start)
+        end = next(z.name for z in self.graph.zones.values() if z.is_end)
+        visited = {start}
+        queue = [start]
+        while queue:
+            current = queue.pop()
+            if current == end:
+                return True
+            for _, neighbor in self.graph.get_neighbors(current):
+                if neighbor.name not in visited:
+                    visited.add(neighbor.name)
+                    queue.append(neighbor.name)
+        return False
+
     def validate_graph(self) -> None:
         """
         Enforce map invariants (unique coordinates, start/end constraints)."""
@@ -203,5 +221,9 @@ class Parsing:
             raise ValueError("Two zones share the same coordinates")
         if len(ends) != 1:
             raise ValueError(f"Expected 1 end zone, found {len(ends)}")
+        if len(starts) != 1:
+            raise ValueError(f"Expected 1 start zone, found {len(starts)}")
+        if not self.is_reachable():
+            raise ValueError("No valid path found")
         if self.graph.nb_drones <= 0:
             raise ValueError("1 or more drone expected")
