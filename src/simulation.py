@@ -65,9 +65,13 @@ class Pathfinder:
                     if zone_count >= neighbor.max_drones:
                         continue
                 k: tuple[str, str] = self.link_key(zone_name, neighbor.name)
-                link_count: int = self.link_table.get((k[0], k[1],
-                                                       new_turn), 0)
-                if link_count >= connection.max_link_capacity:
+                busy: bool = False
+                for t in range(turn + 1, new_turn + 1):
+                    if (self.link_table.get((k[0], k[1], t), 0) >=
+                            connection.max_link_capacity):
+                        busy = True
+                        break
+                if busy:
                     continue
                 penalty: float = (0.0 if neighbor.zone ==
                                   ZoneType.PRIORITY else 0.001)
@@ -100,11 +104,10 @@ class Pathfinder:
             self.zone_table[state] = self.zone_table.get(state, 0) + 1
         for (turn1, zone1), (turn2, zone2) in zip(path, path[1:]):
             if zone1 != zone2:
-                link: tuple[str, str, int] = (
-                    *self.link_key(zone1, zone2),
-                    turn2,
-                )
-                self.link_table[link] = self.link_table.get(link, 0) + 1
+                key = self.link_key(zone1, zone2)
+                for t in range(turn1 + 1, turn2 + 1):
+                    link = (*key, t)
+                    self.link_table[link] = self.link_table.get(link, 0) + 1
 
     def routing(self) -> list[list[tuple[int, str]]]:
         """Compute and reserve valid paths for all active drones."""

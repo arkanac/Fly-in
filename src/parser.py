@@ -141,7 +141,10 @@ class Parsing:
                     if "=" not in pair:
                         raise ValueError(f"Invalid metadata pair: '{pair}'")
                     k, v = pair.split("=")
-                    zone_data[k] = v.strip("]")
+                    value: str | int = v.strip("]")
+                    if k == "max_drones":
+                        value = int(value)
+                    zone_data[k] = value
             zone = Zone.model_validate(zone_data)
             if zone.name in self.graph.zones:
                 raise ValueError(f"Duplicate zone: '{zone.name}'")

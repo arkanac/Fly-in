@@ -283,8 +283,10 @@ class Display:
         self.screen = pygame.display.set_mode()
         self.coords = self.coordinate_calculation()
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000)
+        clock = pygame.time.Clock()
 
         while self.running:
+            clock.tick(60)
             self._handle_events()
             self.screen.fill((255, 255, 255))
             r = int(40 * self.zoom_scale)
